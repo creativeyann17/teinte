@@ -43,13 +43,32 @@ binary, no runtime dependencies.
 
 Good to know:
 
-- **Windows**: for strong corrections, import
-  [`build/windows/enable-full-gamma-range.reg`](build/windows/enable-full-gamma-range.reg)
-  once (admin) — Windows otherwise clamps gamma ramps to a narrow range.
 - **Linux**: X11 session required for gamma (Wayland not supported yet);
   saturation needs the NVIDIA GPU to drive a display.
 - Saturation/hue are per GPU (all its displays), gamma controls are per
   display.
+
+### Full gamma range on Windows (optional)
+
+Windows deliberately clamps gamma ramps to a narrow band around neutral
+(an old anti-malware measure, so nothing can black out your screen). Mild
+corrections work out of the box; if you push the sliders far and Teinte
+reports *"gamma ramp rejected"*, you can lift the clamp with a documented
+registry switch — the same one f.lux asks for:
+
+```
+Key:   HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ICM
+Value: GdiIcmGammaRange (DWORD) = 256
+```
+
+Or from an **administrator** terminal:
+
+```
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ICM" /v GdiIcmGammaRange /t REG_DWORD /d 256
+```
+
+Log out and back in for it to take effect. Nothing else is modified, and
+deleting the value restores the default clamp.
 
 ## Install
 

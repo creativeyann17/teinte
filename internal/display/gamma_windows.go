@@ -89,7 +89,7 @@ func (m *gdiManager) Apply(id string, ramp *color.Ramp) error {
 
 	if ok, _, _ := procSetDeviceGammaRamp.Call(hdc, uintptr(unsafe.Pointer(ramp))); ok == 0 {
 		return fmt.Errorf("gamma ramp rejected on %s — Windows clamps extreme ramps unless the "+
-			"GdiIcmGammaRange registry key is set, see build/windows/enable-full-gamma-range.reg", id)
+			"GdiIcmGammaRange registry key is set, see the README \"Full gamma range\" section", id)
 	}
 	return nil
 }

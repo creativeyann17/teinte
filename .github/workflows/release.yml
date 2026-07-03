@@ -89,17 +89,12 @@ jobs:
           tar -C dist -czf dist/${{ matrix.archive }} ${{ matrix.binary }}
           rm dist/${{ matrix.binary }}
 
-      # The Windows zip ships the registry unlock alongside the exe —
-      # strong corrections need it (see README).
       - name: Archive (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path dist/pkg
-          Copy-Item build/bin/${{ matrix.binary }} dist/pkg/
-          Copy-Item build/windows/enable-full-gamma-range.reg dist/pkg/
-          Compress-Archive -Path dist/pkg/* -DestinationPath dist/${{ matrix.archive }}
-          Remove-Item -Recurse dist/pkg
+          New-Item -ItemType Directory -Force -Path dist
+          Compress-Archive -Path build/bin/${{ matrix.binary }} -DestinationPath dist/${{ matrix.archive }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
