@@ -48,6 +48,7 @@ type State struct {
 	HueMin              int               `json:"hueMin"`
 	HueMax              int               `json:"hueMax"`
 	SaturationDefault   int               `json:"saturationDefault"`
+	Presets             []string          `json:"presets"`
 	Errors              string            `json:"errors"`
 	Version             string            `json:"version"`
 }
@@ -158,6 +159,17 @@ func (a *App) Reset() State {
 	return a.Apply(color.Defaults(a.defaultSaturationPercent()))
 }
 
+// ApplyPreset applies a built-in profile to the selected display.
+// Unknown names are a no-op returning current state.
+func (a *App) ApplyPreset(name string) State {
+	for _, p := range color.Presets(a.defaultSaturationPercent()) {
+		if p.Profile == name {
+			return a.Apply(p)
+		}
+	}
+	return a.GetState()
+}
+
 // applyVendorLocked pushes the GPU-global controls (saturation, hue).
 // Gamma and vendor controls are independent; one failing must not block
 // the other, so errors are collected as strings. Caller holds a.mu.
@@ -239,10 +251,15 @@ func (a *App) state(errs string) State {
 	if hueAvailable {
 		hueMin, hueMax = a.gpu.HueRange()
 	}
+	presetNames := []string{}
+	for _, p := range color.Presets(0) {
+		presetNames = append(presetNames, p.Profile)
+	}
 	return State{
 		Settings:            a.settingsFor(a.selected),
 		Displays:            displays,
 		Selected:            a.selected,
+		Presets:             presetNames,
 		GammaBackend:        a.disp.Describe(),
 		VendorBackend:       a.gpu.Describe(),
 		SaturationAvailable: a.gpu.Available(),

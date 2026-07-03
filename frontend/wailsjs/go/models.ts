@@ -1,5 +1,21 @@
 export namespace color {
 	
+	export class ChannelSettings {
+	    brightness: number;
+	    contrast: number;
+	    gamma: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChannelSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.brightness = source["brightness"];
+	        this.contrast = source["contrast"];
+	        this.gamma = source["gamma"];
+	    }
+	}
 	export class Settings {
 	    temperature: number;
 	    brightness: number;
@@ -7,6 +23,10 @@ export namespace color {
 	    gamma: number;
 	    saturation: number;
 	    hue: number;
+	    red: ChannelSettings;
+	    green: ChannelSettings;
+	    blue: ChannelSettings;
+	    profile: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -20,7 +40,29 @@ export namespace color {
 	        this.gamma = source["gamma"];
 	        this.saturation = source["saturation"];
 	        this.hue = source["hue"];
+	        this.red = this.convertValues(source["red"], ChannelSettings);
+	        this.green = this.convertValues(source["green"], ChannelSettings);
+	        this.blue = this.convertValues(source["blue"], ChannelSettings);
+	        this.profile = source["profile"];
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }
@@ -57,6 +99,7 @@ export namespace main {
 	    hueMin: number;
 	    hueMax: number;
 	    saturationDefault: number;
+	    presets: string[];
 	    errors: string;
 	    version: string;
 	
@@ -76,6 +119,7 @@ export namespace main {
 	        this.hueMin = source["hueMin"];
 	        this.hueMax = source["hueMax"];
 	        this.saturationDefault = source["saturationDefault"];
+	        this.presets = source["presets"];
 	        this.errors = source["errors"];
 	        this.version = source["version"];
 	    }

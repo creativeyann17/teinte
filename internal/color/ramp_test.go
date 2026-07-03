@@ -78,3 +78,49 @@ func TestClamp(t *testing.T) {
 		t.Errorf("clamp wrong: %+v", c)
 	}
 }
+
+func TestBuildRampChannelAdjustmentAffectsOnlyThatChannel(t *testing.T) {
+	s := Defaults(0)
+	s.Blue.Brightness = 50
+	ramp := BuildRamp(s)
+	top := RampSize - 1
+	if ramp[0][top] != 65535 || ramp[1][top] != 65535 {
+		t.Errorf("red/green tops changed: r=%d g=%d", ramp[0][top], ramp[1][top])
+	}
+	if got, want := ramp[2][top], uint16(32768); got != want {
+		t.Errorf("blue top = %d, want %d", got, want)
+	}
+}
+
+func TestBuildRampChannelCombinesWithGlobal(t *testing.T) {
+	s := Defaults(0)
+	s.Brightness = 50
+	s.Red.Brightness = 50
+	ramp := BuildRamp(s)
+	// 0.5 * 0.5 = 0.25 gain on red top entry
+	if got, want := ramp[0][RampSize-1], uint16(16384); got != want {
+		t.Errorf("combined brightness red top = %d, want %d", got, want)
+	}
+}
+
+func TestClampLegacyConfigGetsNeutralChannels(t *testing.T) {
+	s := Settings{Temperature: 6500, Brightness: 100, Contrast: 100, Gamma: 1}
+	c := s.Clamp()
+	if c.Red != NeutralChannel() || c.Green != NeutralChannel() || c.Blue != NeutralChannel() {
+		t.Errorf("legacy channels not neutral: %+v", c)
+	}
+	if c.Profile != CustomProfile {
+		t.Errorf("empty profile = %q, want %q", c.Profile, CustomProfile)
+	}
+}
+
+func TestPresetsAreValidAndNamed(t *testing.T) {
+	for _, p := range Presets(50) {
+		if p.Profile == "" || p.Profile == CustomProfile {
+			t.Errorf("preset with bad profile %q", p.Profile)
+		}
+		if p.Clamp() != p {
+			t.Errorf("preset %s not already clamped: %+v vs %+v", p.Profile, p.Clamp(), p)
+		}
+	}
+}

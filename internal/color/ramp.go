@@ -12,7 +12,9 @@ type Ramp [3][RampSize]uint16
 
 // BuildRamp computes the LUT for the given settings.
 //
-// Per-channel pipeline, input x in [0,1]:
+// Global and per-channel adjustments combine multiplicatively
+// (brightness/contrast percentages) and by product (gamma), then run
+// through the pipeline per channel, input x in [0,1]:
 //  1. contrast: pivot around mid gray, x = (x-0.5)*c + 0.5
 //  2. brightness: linear gain, x = x*b
 //  3. gamma: x = x^(1/g)
@@ -22,17 +24,18 @@ func BuildRamp(s Settings) *Ramp {
 
 	mr, mg, mb := TemperatureMultipliers(float64(s.Temperature))
 	mult := [3]float64{mr, mg, mb}
-	contrast := float64(s.Contrast) / 100
-	brightness := float64(s.Brightness) / 100
-	invGamma := 1 / s.Gamma
+	channels := [3]ChannelSettings{s.Red, s.Green, s.Blue}
 
 	var ramp Ramp
-	for i := range RampSize {
-		x := float64(i) / (RampSize - 1)
-		x = (x-0.5)*contrast + 0.5
-		x = clamp01(x * brightness)
-		x = math.Pow(x, invGamma)
-		for c := range 3 {
+	for c := range 3 {
+		brightness := float64(s.Brightness) / 100 * float64(channels[c].Brightness) / 100
+		contrast := float64(s.Contrast) / 100 * float64(channels[c].Contrast) / 100
+		invGamma := 1 / (s.Gamma * channels[c].Gamma)
+		for i := range RampSize {
+			x := float64(i) / (RampSize - 1)
+			x = (x-0.5)*contrast + 0.5
+			x = clamp01(x * brightness)
+			x = math.Pow(x, invGamma)
 			ramp[c][i] = uint16(clamp01(x*mult[c])*65535 + 0.5)
 		}
 	}

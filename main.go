@@ -54,10 +54,10 @@ func main() {
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:     "Teinte — display color control",
-		Width:     460,
-		Height:    620,
-		MinWidth:  400,
-		MinHeight: 560,
+		Width:     620,
+		Height:    720,
+		MinWidth:  560,
+		MinHeight: 680,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

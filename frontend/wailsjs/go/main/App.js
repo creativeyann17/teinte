@@ -6,6 +6,10 @@ export function Apply(arg1) {
   return window['go']['main']['App']['Apply'](arg1);
 }
 
+export function ApplyPreset(arg1) {
+  return window['go']['main']['App']['ApplyPreset'](arg1);
+}
+
 export function GetState() {
   return window['go']['main']['App']['GetState']();
 }

@@ -5,6 +5,8 @@ import {main} from '../models';
 
 export function Apply(arg1:color.Settings):Promise<main.State>;
 
+export function ApplyPreset(arg1:string):Promise<main.State>;
+
 export function GetState():Promise<main.State>;
 
 export function Reset():Promise<main.State>;
