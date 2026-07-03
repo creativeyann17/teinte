@@ -1,0 +1,9 @@
+Windows Registry Editor Version 5.00
+
+; Windows clamps gamma ramps to a narrow range around identity to stop
+; malware from blanking the screen. This key (the same one f.lux uses)
+; unlocks the full range so strong temperature/brightness settings work.
+; Import as administrator, then reboot or re-login.
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ICM]
+"GdiIcmGammaRange"=dword:00000100

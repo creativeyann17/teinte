@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Tests
+        run: make test
+      # The Windows target is pure Go (no webkit), so a cross-compile
+      # check is cheap and catches gdi32/nvapi breakage early.
+      - name: Cross-compile check (windows)
+        run: GOOS=windows GOARCH=amd64 go build ./...
