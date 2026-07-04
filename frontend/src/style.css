@@ -279,6 +279,15 @@ aside {
   padding: 6px 12px;
 }
 
+#save-profile:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#save-profile:disabled:hover {
+  border-color: var(--track);
+}
+
 .panel {
   flex: 1;
   display: flex;

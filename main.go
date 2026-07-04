@@ -69,8 +69,7 @@ func main() {
 		SingleInstanceLock: &options.SingleInstanceLock{
 			UniqueId: "com.creativeyann17.teinte",
 			OnSecondInstanceLaunch: func(options.SecondInstanceData) {
-				runtime.WindowUnminimise(app.ctx)
-				runtime.WindowShow(app.ctx)
+				app.showWindow()
 			},
 		},
 		// Close-to-tray by default: the X button hides the window so

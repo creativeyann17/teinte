@@ -66,13 +66,26 @@ func NewApp() *App {
 	}
 }
 
+// showWindow restores the main window from tray. WindowShow brings
+// back a hidden window, WindowUnminimise covers one minimised before
+// hiding; both are cheap no-ops when already in the target state. The
+// nil guard protects the second-instance callback, which can in theory
+// fire before startup has stored the context.
+func (a *App) showWindow() {
+	if a.ctx == nil {
+		return
+	}
+	runtime.WindowShow(a.ctx)
+	runtime.WindowUnminimise(a.ctx)
+}
+
 // startup wires the tray and reapplies the saved colors, so they come
 // back automatically after reboot/login.
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
 	tray.Start(trayIcon(), "Teinte", tray.Callbacks{
-		OnOpen: func() { runtime.WindowShow(a.ctx) },
+		OnOpen: a.showWindow,
 		OnQuit: func() {
 			a.quitting = true
 			runtime.Quit(a.ctx)
@@ -200,8 +213,13 @@ func (a *App) ApplyPreset(name string) State {
 	return a.GetState()
 }
 
+// maxUserProfiles caps the "Yours" section: the sidebar has fixed
+// space, and export/import is the intended path for collections.
+const maxUserProfiles = 3
+
 // SaveProfile stores the selected display's current settings as a named
-// user profile (overwriting an existing one with the same name).
+// user profile (overwriting an existing one with the same name). New
+// names are rejected once the cap is reached; overwrites always pass.
 func (a *App) SaveProfile(name string) State {
 	name = strings.TrimSpace(name)
 
@@ -209,6 +227,9 @@ func (a *App) SaveProfile(name string) State {
 	defer a.mu.Unlock()
 	if name == "" {
 		return a.state("profile name is empty")
+	}
+	if _, exists := a.userProfiles[name]; !exists && len(a.userProfiles) >= maxUserProfiles {
+		return a.state("max 3 profiles — overwrite or delete one")
 	}
 	if name == color.CustomProfile {
 		return a.state(`"Custom" is reserved`)

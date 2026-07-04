@@ -105,7 +105,7 @@ function render(state) {
       <aside>
         <div class="aside-title">Profiles</div>
         ${presetBtns}
-        ${userBtns ? `<div class="aside-title user-title">Yours</div>${userBtns}` : ''}
+        ${userBtns ? `<div class="aside-title user-title">Yours ${(state.userPresets || []).length}/3</div>${userBtns}` : ''}
         <button class="preset-btn ${settings.profile === 'Custom' ? 'active' : ''}" disabled>Custom</button>
         <div class="aside-bottom">
           <button id="export" title="Export all settings & profiles to a JSON file">Export</button>
@@ -161,14 +161,30 @@ function render(state) {
     });
   });
 
+  const nameInput = document.getElementById('profile-name');
+  const saveBtn = document.getElementById('save-profile');
+  // At the cap, only overwriting an existing name is allowed — the
+  // button reflects that live as the user types.
+  const updateSaveState = () => {
+    const name = nameInput.value.trim();
+    const users = state.userPresets || [];
+    const blocked = users.length >= 3 && !users.includes(name);
+    saveBtn.disabled = blocked;
+    saveBtn.title = blocked
+      ? 'Max 3 profiles — reuse an existing name to overwrite, or delete one'
+      : 'Save profile (overwrites same name)';
+  };
+  updateSaveState();
+  nameInput.addEventListener('input', updateSaveState);
+
   const saveProfile = async () => {
-    const name = document.getElementById('profile-name').value.trim();
-    if (!name) return;
+    const name = nameInput.value.trim();
+    if (!name || saveBtn.disabled) return;
     clearTimeout(applyTimer);
     render(await SaveProfile(name));
   };
-  document.getElementById('save-profile').addEventListener('click', saveProfile);
-  document.getElementById('profile-name').addEventListener('keydown', (e) => {
+  saveBtn.addEventListener('click', saveProfile);
+  nameInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') saveProfile();
   });
 
