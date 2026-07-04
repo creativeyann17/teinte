@@ -63,6 +63,16 @@ func main() {
 		},
 		BackgroundColour: &options.RGBA{R: 22, G: 24, B: 29, A: 1},
 		OnStartup:        app.startup,
+		// Launching Teinte while it sits in the tray must not spawn a
+		// second process: the new launch pops the existing window
+		// instead, then exits.
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId: "com.creativeyann17.teinte",
+			OnSecondInstanceLaunch: func(options.SecondInstanceData) {
+				runtime.WindowUnminimise(app.ctx)
+				runtime.WindowShow(app.ctx)
+			},
+		},
 		// Close-to-tray by default: the X button hides the window so
 		// the saved colors keep being guarded by a live process; real
 		// exit is the tray menu's Quit.
