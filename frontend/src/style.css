@@ -376,10 +376,62 @@ input[type="range"]:disabled::-webkit-slider-thumb {
 
 footer {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: flex-end;
+  gap: 12px;
   font-size: 11px;
   color: var(--muted);
+}
+
+.footer-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Custom toggle switch — native checkboxes are OS-painted, and we
+   style every component ourselves. */
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.toggle input {
+  display: none;
+}
+
+.toggle .track {
+  width: 30px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--track);
+  position: relative;
+  transition: background 0.15s;
+}
+
+.toggle .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: left 0.15s, background 0.15s;
+}
+
+.toggle input:checked + .track {
+  background: var(--accent);
+}
+
+.toggle input:checked + .track .knob {
+  left: 16px;
+  background: #fff;
 }
 
 .backend.off {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
+	"teinte/internal/autostart"
 	"teinte/internal/color"
 	"teinte/internal/config"
 	"teinte/internal/display"
@@ -53,6 +54,8 @@ type State struct {
 	SaturationDefault   int               `json:"saturationDefault"`
 	Presets             []string          `json:"presets"`
 	UserPresets         []string          `json:"userPresets"`
+	Autostart           bool              `json:"autostart"`
+	AutostartAvailable  bool              `json:"autostartAvailable"`
 	Errors              string            `json:"errors"`
 	Version             string            `json:"version"`
 }
@@ -247,6 +250,17 @@ func (a *App) SaveProfile(name string) State {
 	return a.state(a.save())
 }
 
+// SetAutostart registers/unregisters starting Teinte (hidden, in the
+// tray) at login.
+func (a *App) SetAutostart(enable bool) State {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if err := autostart.Set(enable); err != nil {
+		return a.state("autostart: " + err.Error())
+	}
+	return a.state("")
+}
+
 // DeleteProfile removes a user profile (built-ins are untouchable).
 func (a *App) DeleteProfile(name string) State {
 	a.mu.Lock()
@@ -415,6 +429,8 @@ func (a *App) state(errs string) State {
 		Selected:            a.selected,
 		Presets:             presetNames,
 		UserPresets:         userNames,
+		Autostart:           autostart.Enabled(),
+		AutostartAvailable:  autostart.Available(),
 		GammaBackend:        a.disp.Describe(),
 		VendorBackend:       a.gpu.Describe(),
 		SaturationAvailable: a.gpu.Available(),

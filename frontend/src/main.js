@@ -1,7 +1,7 @@
 import './style.css';
 import {
   GetState, Apply, Reset, SelectDisplay, ApplyPreset,
-  SaveProfile, DeleteProfile, ExportConfig, ImportConfig,
+  SaveProfile, DeleteProfile, ExportConfig, ImportConfig, SetAutostart,
 } from '../wailsjs/go/main/App';
 
 // Sliders of the "All" view, mirroring the AMD Adrenalin custom color
@@ -123,9 +123,17 @@ function render(state) {
       </section>
     </div>
     <footer>
-      <div class="backend">gamma: ${state.gammaBackend}</div>
-      <div class="backend ${state.saturationAvailable ? '' : 'off'}">vendor: ${state.vendorBackend}</div>
-      <div class="errors" id="errors">${state.errors || ''}</div>
+      <div class="footer-info">
+        <div class="backend">gamma: ${state.gammaBackend}</div>
+        <div class="backend ${state.saturationAvailable ? '' : 'off'}">vendor: ${state.vendorBackend}</div>
+        <div class="errors" id="errors">${state.errors || ''}</div>
+      </div>
+      ${state.autostartAvailable ? `
+      <label class="toggle" title="Start Teinte at login, hidden in the tray">
+        <input type="checkbox" id="autostart" ${state.autostart ? 'checked' : ''} />
+        <span class="track"><span class="knob"></span></span>
+        Start at login
+      </label>` : ''}
     </footer>`;
 
   for (const def of defs) {
@@ -194,6 +202,10 @@ function render(state) {
   document.getElementById('import').addEventListener('click', async () => {
     clearTimeout(applyTimer);
     render(await ImportConfig());
+  });
+
+  document.getElementById('autostart')?.addEventListener('change', async (e) => {
+    render(await SetAutostart(e.target.checked));
   });
 
   document.getElementById('reset').addEventListener('click', async () => {

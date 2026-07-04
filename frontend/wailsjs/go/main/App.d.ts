@@ -20,3 +20,5 @@ export function Reset():Promise<main.State>;
 export function SaveProfile(arg1:string):Promise<main.State>;
 
 export function SelectDisplay(arg1:string):Promise<main.State>;
+
+export function SetAutostart(arg1:boolean):Promise<main.State>;

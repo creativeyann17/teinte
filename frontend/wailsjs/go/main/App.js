@@ -37,3 +37,7 @@ export function SaveProfile(arg1) {
 export function SelectDisplay(arg1) {
   return window['go']['main']['App']['SelectDisplay'](arg1);
 }
+
+export function SetAutostart(arg1) {
+  return window['go']['main']['App']['SetAutostart'](arg1);
+}

@@ -101,6 +101,8 @@ export namespace main {
 	    saturationDefault: number;
 	    presets: string[];
 	    userPresets: string[];
+	    autostart: boolean;
+	    autostartAvailable: boolean;
 	    errors: string;
 	    version: string;
 	
@@ -122,6 +124,8 @@ export namespace main {
 	        this.saturationDefault = source["saturationDefault"];
 	        this.presets = source["presets"];
 	        this.userPresets = source["userPresets"];
+	        this.autostart = source["autostart"];
+	        this.autostartAvailable = source["autostartAvailable"];
 	        this.errors = source["errors"];
 	        this.version = source["version"];
 	    }

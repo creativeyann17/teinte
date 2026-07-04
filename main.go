@@ -53,11 +53,14 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:     "Teinte — display color control",
-		Width:     620,
-		Height:    800,
-		MinWidth:  560,
-		MinHeight: 740,
+		Title: "Teinte — display color control",
+		// --hidden is what the autostart entry uses: boot straight to
+		// the tray, no window flash at login.
+		StartHidden: slices.Contains(os.Args[1:], "--hidden"),
+		Width:       620,
+		Height:      800,
+		MinWidth:    560,
+		MinHeight:   740,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
