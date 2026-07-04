@@ -2,7 +2,9 @@ import './style.css';
 import {
   GetState, Apply, Reset, SelectDisplay, ApplyPreset,
   SaveProfile, DeleteProfile, ExportConfig, ImportConfig, SetAutostart,
+  CheckUpdate,
 } from '../wailsjs/go/main/App';
+import { BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 // Sliders of the "All" view, mirroring the AMD Adrenalin custom color
 // panel. Saturation/hue act GPU-wide, hence the divider before them.
@@ -31,6 +33,7 @@ let settings = {};
 let lastState = null;
 let channel = 'all';
 let applyTimer = null;
+let updateInfo = null; // filled async by CheckUpdate after first paint
 
 function fmt(def, value) {
   const v = def.step < 1 ? Number(value).toFixed(2) : Math.round(value);
@@ -128,6 +131,9 @@ function render(state) {
         <div class="backend ${state.saturationAvailable ? '' : 'off'}">vendor: ${state.vendorBackend}</div>
         <div class="errors" id="errors">${state.errors || ''}</div>
       </div>
+      <button class="site-link ${updateInfo?.updateAvailable ? 'update' : ''}" id="site-link">
+        ${updateInfo?.updateAvailable ? `New version ${updateInfo.latest || ''} available!` : 'Visit website'}
+      </button>
       ${state.autostartAvailable ? `
       <label class="toggle" title="Start Teinte at login, hidden in the tray">
         <input type="checkbox" id="autostart" ${state.autostart ? 'checked' : ''} />
@@ -204,6 +210,10 @@ function render(state) {
     render(await ImportConfig());
   });
 
+  document.getElementById('site-link').addEventListener('click', () => {
+    BrowserOpenURL(updateInfo?.url || 'https://github.com/creativeyann17/teinte');
+  });
+
   document.getElementById('autostart')?.addEventListener('change', async (e) => {
     render(await SetAutostart(e.target.checked));
   });
@@ -242,4 +252,11 @@ function scheduleApply() {
   }, 100);
 }
 
-GetState().then(render);
+GetState().then((state) => {
+  render(state);
+  // Update check after first paint — slow/offline network never blocks the UI.
+  CheckUpdate().then((info) => {
+    updateInfo = info;
+    render(lastState);
+  });
+});

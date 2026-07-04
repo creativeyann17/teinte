@@ -10,6 +10,10 @@ export function ApplyPreset(arg1) {
   return window['go']['main']['App']['ApplyPreset'](arg1);
 }
 
+export function CheckUpdate() {
+  return window['go']['main']['App']['CheckUpdate']();
+}
+
 export function DeleteProfile(arg1) {
   return window['go']['main']['App']['DeleteProfile'](arg1);
 }

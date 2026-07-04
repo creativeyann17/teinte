@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -248,6 +251,65 @@ func (a *App) SaveProfile(name string) State {
 	a.userProfiles[name] = s
 	a.perDisplay[a.selected] = s // the saved profile becomes the active one
 	return a.state(a.save())
+}
+
+const (
+	websiteURL  = "https://github.com/creativeyann17/teinte"
+	releasesURL = websiteURL + "/releases"
+	latestAPI   = "https://api.github.com/repos/creativeyann17/teinte/releases/latest"
+)
+
+// UpdateInfo tells the frontend whether a newer release exists.
+type UpdateInfo struct {
+	Latest          string `json:"latest"`
+	UpdateAvailable bool   `json:"updateAvailable"`
+	URL             string `json:"url"`
+}
+
+// CheckUpdate asks GitHub for the latest release tag. Called async by
+// the frontend after first paint so a slow network never blocks the UI.
+// Offline/rate-limited = silently no update. Dev builds always report
+// an update so the red path is easy to eyeball.
+func (a *App) CheckUpdate() UpdateInfo {
+	info := UpdateInfo{URL: releasesURL, UpdateAvailable: version == "dev"}
+
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(latestAPI)
+	if err != nil {
+		return info
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return info
+	}
+	var release struct {
+		TagName string `json:"tag_name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return info
+	}
+	info.Latest = strings.TrimPrefix(release.TagName, "v")
+	info.UpdateAvailable = version == "dev" || semverLess(version, info.Latest)
+	return info
+}
+
+// semverLess reports a < b for dotted numeric versions ("0.4.2").
+// Non-numeric parts compare as 0, so garbage never claims an update.
+func semverLess(a, b string) bool {
+	pa, pb := strings.Split(a, "."), strings.Split(b, ".")
+	for i := 0; i < len(pa) || i < len(pb); i++ {
+		na, nb := 0, 0
+		if i < len(pa) {
+			na, _ = strconv.Atoi(pa[i])
+		}
+		if i < len(pb) {
+			nb, _ = strconv.Atoi(pb[i])
+		}
+		if na != nb {
+			return na < nb
+		}
+	}
+	return false
 }
 
 // SetAutostart registers/unregisters starting Teinte (hidden, in the

@@ -148,6 +148,22 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class UpdateInfo {
+	    latest: string;
+	    updateAvailable: boolean;
+	    url: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.latest = source["latest"];
+	        this.updateAvailable = source["updateAvailable"];
+	        this.url = source["url"];
+	    }
+	}
 
 }
 

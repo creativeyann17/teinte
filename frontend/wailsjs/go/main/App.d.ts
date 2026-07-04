@@ -7,6 +7,8 @@ export function Apply(arg1:color.Settings):Promise<main.State>;
 
 export function ApplyPreset(arg1:string):Promise<main.State>;
 
+export function CheckUpdate():Promise<main.UpdateInfo>;
+
 export function DeleteProfile(arg1:string):Promise<main.State>;
 
 export function ExportConfig():Promise<main.State>;
