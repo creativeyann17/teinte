@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -25,9 +27,10 @@ type App struct {
 	disp display.Manager
 	gpu  gpucolor.Controller
 
-	selected   string
-	perDisplay map[string]color.Settings
-	quitting   bool // set by the tray Quit so OnBeforeClose lets the app die
+	selected     string
+	perDisplay   map[string]color.Settings
+	userProfiles map[string]color.Settings
+	quitting     bool // set by the tray Quit so OnBeforeClose lets the app die
 }
 
 // State is everything the frontend needs to render: current settings
@@ -49,15 +52,17 @@ type State struct {
 	HueMax              int               `json:"hueMax"`
 	SaturationDefault   int               `json:"saturationDefault"`
 	Presets             []string          `json:"presets"`
+	UserPresets         []string          `json:"userPresets"`
 	Errors              string            `json:"errors"`
 	Version             string            `json:"version"`
 }
 
 func NewApp() *App {
 	return &App{
-		disp:       display.New(),
-		gpu:        gpucolor.New(),
-		perDisplay: map[string]color.Settings{},
+		disp:         display.New(),
+		gpu:          gpucolor.New(),
+		perDisplay:   map[string]color.Settings{},
+		userProfiles: map[string]color.Settings{},
 	}
 }
 
@@ -104,13 +109,32 @@ func (a *App) loadAndApplyAll() string {
 		errs = join(errs, "config: "+err.Error())
 	}
 	if found {
-		a.perDisplay = saved.Displays
-		a.selected = saved.Selected
+		a.adoptLocked(saved)
 	}
+	return join(errs, a.applyAllLocked())
+}
 
+// adoptLocked replaces the in-memory state with a loaded/imported
+// config. Caller holds a.mu.
+func (a *App) adoptLocked(f config.File) {
+	a.perDisplay = f.Displays
+	a.selected = f.Selected
+	a.userProfiles = f.UserProfiles
+	if a.perDisplay == nil {
+		a.perDisplay = map[string]color.Settings{}
+	}
+	if a.userProfiles == nil {
+		a.userProfiles = map[string]color.Settings{}
+	}
+}
+
+// applyAllLocked pushes the in-memory settings to every connected
+// display plus the GPU-global controls. Caller holds a.mu.
+func (a *App) applyAllLocked() string {
+	var errs string
 	displays, err := a.disp.List()
 	if err != nil {
-		return join(errs, "displays: "+err.Error())
+		return "displays: " + err.Error()
 	}
 	if !a.selectionValid(displays) && len(displays) > 0 {
 		a.selected = displays[0].ID
@@ -159,15 +183,115 @@ func (a *App) Reset() State {
 	return a.Apply(color.Defaults(a.defaultSaturationPercent()))
 }
 
-// ApplyPreset applies a built-in profile to the selected display.
-// Unknown names are a no-op returning current state.
+// ApplyPreset applies a built-in or user profile to the selected
+// display. Unknown names are a no-op returning current state.
 func (a *App) ApplyPreset(name string) State {
 	for _, p := range color.Presets(a.defaultSaturationPercent()) {
 		if p.Profile == name {
 			return a.Apply(p)
 		}
 	}
+	a.mu.Lock()
+	s, ok := a.userProfiles[name]
+	a.mu.Unlock()
+	if ok {
+		return a.Apply(s)
+	}
 	return a.GetState()
+}
+
+// SaveProfile stores the selected display's current settings as a named
+// user profile (overwriting an existing one with the same name).
+func (a *App) SaveProfile(name string) State {
+	name = strings.TrimSpace(name)
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if name == "" {
+		return a.state("profile name is empty")
+	}
+	if name == color.CustomProfile {
+		return a.state(`"Custom" is reserved`)
+	}
+	for _, p := range color.Presets(0) {
+		if p.Profile == name {
+			return a.state(`"` + name + `" is a built-in profile, pick another name`)
+		}
+	}
+
+	s := a.settingsFor(a.selected)
+	s.Profile = name
+	a.userProfiles[name] = s
+	a.perDisplay[a.selected] = s // the saved profile becomes the active one
+	return a.state(a.save())
+}
+
+// DeleteProfile removes a user profile (built-ins are untouchable).
+func (a *App) DeleteProfile(name string) State {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	delete(a.userProfiles, name)
+	return a.state(a.save())
+}
+
+// ExportConfig writes the full settings file (displays + user profiles)
+// to a user-chosen path. Cancelled dialog = no-op.
+func (a *App) ExportConfig() State {
+	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Export Teinte settings",
+		DefaultFilename: "teinte-settings.json",
+		Filters:         []runtime.FileFilter{{DisplayName: "JSON", Pattern: "*.json"}},
+	})
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if err != nil {
+		return a.state("export: " + err.Error())
+	}
+	if path == "" {
+		return a.state("")
+	}
+	data, err := json.MarshalIndent(config.File{
+		Selected:     a.selected,
+		Displays:     a.perDisplay,
+		UserProfiles: a.userProfiles,
+	}, "", "  ")
+	if err != nil {
+		return a.state("export: " + err.Error())
+	}
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return a.state("export: " + err.Error())
+	}
+	return a.state("")
+}
+
+// ImportConfig loads a previously exported file, applies it to the
+// hardware and persists it. Cancelled dialog = no-op.
+func (a *App) ImportConfig() State {
+	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title:   "Import Teinte settings",
+		Filters: []runtime.FileFilter{{DisplayName: "JSON", Pattern: "*.json"}},
+	})
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if err != nil {
+		return a.state("import: " + err.Error())
+	}
+	if path == "" {
+		return a.state("")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return a.state("import: " + err.Error())
+	}
+	var f config.File
+	if err := json.Unmarshal(data, &f); err != nil {
+		return a.state("import: not valid JSON: " + err.Error())
+	}
+	if f.Displays == nil && f.UserProfiles == nil {
+		return a.state("import: not a Teinte settings file")
+	}
+	a.adoptLocked(f.Normalize())
+	return a.state(join(a.applyAllLocked(), a.save()))
 }
 
 // applyVendorLocked pushes the GPU-global controls (saturation, hue).
@@ -208,7 +332,11 @@ func (a *App) selectionValid(displays []display.Display) bool {
 }
 
 func (a *App) save() string {
-	err := config.Save(config.File{Selected: a.selected, Displays: a.perDisplay})
+	err := config.Save(config.File{
+		Selected:     a.selected,
+		Displays:     a.perDisplay,
+		UserProfiles: a.userProfiles,
+	})
 	if err != nil {
 		return "save: " + err.Error()
 	}
@@ -255,11 +383,17 @@ func (a *App) state(errs string) State {
 	for _, p := range color.Presets(0) {
 		presetNames = append(presetNames, p.Profile)
 	}
+	userNames := []string{}
+	for name := range a.userProfiles {
+		userNames = append(userNames, name)
+	}
+	sort.Strings(userNames)
 	return State{
 		Settings:            a.settingsFor(a.selected),
 		Displays:            displays,
 		Selected:            a.selected,
 		Presets:             presetNames,
+		UserPresets:         userNames,
 		GammaBackend:        a.disp.Describe(),
 		VendorBackend:       a.gpu.Describe(),
 		SaturationAvailable: a.gpu.Available(),

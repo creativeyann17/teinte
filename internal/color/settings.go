@@ -91,6 +91,19 @@ func Presets(defaultSaturation int) []Settings {
 	vivid.Contrast = 105
 	vivid.Saturation = sat(+35)
 
+	// Tuned for typical laptop panels that ship yellowish and washed
+	// out: cold white point + blue channel push to kill the yellow,
+	// contrast and saturation lifted to restore the punch the cold
+	// white point takes away.
+	laptop := base("Laptop")
+	laptop.Temperature = 9300
+	laptop.Contrast = 106
+	laptop.Gamma = 1.05
+	laptop.Saturation = sat(+60)
+	laptop.Red = ChannelSettings{Brightness: 105, Contrast: 105, Gamma: 1.0}
+	laptop.Green = ChannelSettings{Brightness: 105, Contrast: 100, Gamma: 1.0}
+	laptop.Blue = ChannelSettings{Brightness: 115, Contrast: 100, Gamma: 1.0}
+
 	cinema := base("Cinema")
 	cinema.Temperature = 5900 // warm, film-like
 	cinema.Gamma = 1.10
@@ -100,11 +113,20 @@ func Presets(defaultSaturation int) []Settings {
 	gaming.Contrast = 108
 	gaming.Saturation = sat(+25)
 
+	fps := base("FPS Boost")
+	fps.Saturation = sat(+45) // near-max vibrance: targets pop, vibranceGUI-style
+	fps.Contrast = 105
+
+	reading := base("Reading")
+	reading.Temperature = 5000 // paper-like low blue light
+	reading.Brightness = 95
+	reading.Saturation = sat(-20)
+
 	night := base("Night")
 	night.Temperature = 4600 // heavy warm, low blue for evenings
 	night.Brightness = 92
 
-	return []Settings{standard, vivid, cinema, gaming, night}
+	return []Settings{standard, vivid, laptop, cinema, gaming, fps, reading, night}
 }
 
 // Clamp returns a copy with every field forced into its valid range.

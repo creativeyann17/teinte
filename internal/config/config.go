@@ -13,10 +13,24 @@ import (
 )
 
 // File is the on-disk format: one settings block per display, keyed by
-// the display ID from the display backend, plus the last selection.
+// the display ID from the display backend, the last selection, and the
+// user-saved profiles. The same format is used by export/import.
 type File struct {
-	Selected string                    `json:"selected"`
-	Displays map[string]color.Settings `json:"displays"`
+	Selected     string                    `json:"selected"`
+	Displays     map[string]color.Settings `json:"displays"`
+	UserProfiles map[string]color.Settings `json:"userProfiles,omitempty"`
+}
+
+// Normalize clamps every settings block; call after any unmarshal
+// (disk load or user import).
+func (f File) Normalize() File {
+	for id, s := range f.Displays {
+		f.Displays[id] = s.Clamp()
+	}
+	for name, s := range f.UserProfiles {
+		f.UserProfiles[name] = s.Clamp()
+	}
+	return f
 }
 
 func path() (string, error) {
@@ -44,10 +58,7 @@ func Load() (f File, found bool, err error) {
 	if err := json.Unmarshal(data, &f); err != nil || f.Displays == nil {
 		return File{}, false, nil // unknown/old format: start fresh
 	}
-	for id, s := range f.Displays {
-		f.Displays[id] = s.Clamp()
-	}
-	return f, true, nil
+	return f.Normalize(), true, nil
 }
 
 // Save writes the file, creating the directory on first run.

@@ -204,6 +204,81 @@ aside {
   opacity: 0.4;
 }
 
+.user-title {
+  margin-top: 8px;
+}
+
+.preset-user {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+
+.preset-user .preset-btn {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset-user.active .preset-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.preset-del {
+  padding: 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.preset-del:hover {
+  color: #e06c75;
+  border-color: #e06c75;
+}
+
+.aside-bottom {
+  margin-top: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.aside-bottom button {
+  flex: 1;
+  padding: 6px 0;
+  font-size: 12px;
+}
+
+.save-row {
+  display: flex;
+  gap: 6px;
+}
+
+.save-row input {
+  flex: 1;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--track);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.save-row input:focus {
+  border-color: var(--accent);
+}
+
+.save-row input::placeholder {
+  color: var(--muted);
+}
+
+#save-profile {
+  padding: 6px 12px;
+}
+
 .panel {
   flex: 1;
   display: flex;

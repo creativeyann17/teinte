@@ -100,6 +100,7 @@ export namespace main {
 	    hueMax: number;
 	    saturationDefault: number;
 	    presets: string[];
+	    userPresets: string[];
 	    errors: string;
 	    version: string;
 	
@@ -120,6 +121,7 @@ export namespace main {
 	        this.hueMax = source["hueMax"];
 	        this.saturationDefault = source["saturationDefault"];
 	        this.presets = source["presets"];
+	        this.userPresets = source["userPresets"];
 	        this.errors = source["errors"];
 	        this.version = source["version"];
 	    }

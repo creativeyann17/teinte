@@ -10,12 +10,28 @@ export function ApplyPreset(arg1) {
   return window['go']['main']['App']['ApplyPreset'](arg1);
 }
 
+export function DeleteProfile(arg1) {
+  return window['go']['main']['App']['DeleteProfile'](arg1);
+}
+
+export function ExportConfig() {
+  return window['go']['main']['App']['ExportConfig']();
+}
+
 export function GetState() {
   return window['go']['main']['App']['GetState']();
 }
 
+export function ImportConfig() {
+  return window['go']['main']['App']['ImportConfig']();
+}
+
 export function Reset() {
   return window['go']['main']['App']['Reset']();
+}
+
+export function SaveProfile(arg1) {
+  return window['go']['main']['App']['SaveProfile'](arg1);
 }
 
 export function SelectDisplay(arg1) {

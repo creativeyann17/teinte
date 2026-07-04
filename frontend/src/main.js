@@ -1,5 +1,8 @@
 import './style.css';
-import { GetState, Apply, Reset, SelectDisplay, ApplyPreset } from '../wailsjs/go/main/App';
+import {
+  GetState, Apply, Reset, SelectDisplay, ApplyPreset,
+  SaveProfile, DeleteProfile, ExportConfig, ImportConfig,
+} from '../wailsjs/go/main/App';
 
 // Sliders of the "All" view, mirroring the AMD Adrenalin custom color
 // panel. Saturation/hue act GPU-wide, hence the divider before them.
@@ -66,6 +69,13 @@ function render(state) {
     `<button class="preset-btn ${settings.profile === name ? 'active' : ''}" data-preset="${name}">${name}</button>`
   ).join('');
 
+  const userBtns = (state.userPresets || []).map((name) =>
+    `<div class="preset-user ${settings.profile === name ? 'active' : ''}">
+       <button class="preset-btn" data-preset="${name}">${name}</button>
+       <button class="preset-del" data-del="${name}" title="Delete profile">✕</button>
+     </div>`
+  ).join('');
+
   const tabs = CHANNELS.map((c) =>
     `<button class="tab ${c} ${channel === c ? 'active' : ''}" data-channel="${c}">${c === 'all' ? 'All' : c[0].toUpperCase()}</button>`
   ).join('');
@@ -95,9 +105,19 @@ function render(state) {
       <aside>
         <div class="aside-title">Profiles</div>
         ${presetBtns}
+        ${userBtns ? `<div class="aside-title user-title">Yours</div>${userBtns}` : ''}
         <button class="preset-btn ${settings.profile === 'Custom' ? 'active' : ''}" disabled>Custom</button>
+        <div class="aside-bottom">
+          <button id="export" title="Export all settings & profiles to a JSON file">Export</button>
+          <button id="import" title="Import settings & profiles from a JSON file">Import</button>
+        </div>
       </aside>
       <section class="panel">
+        <div class="save-row">
+          <input id="profile-name" type="text" maxlength="24" placeholder="Save current as profile…"
+                 value="${state.userPresets?.includes(settings.profile) ? settings.profile : ''}" />
+          <button id="save-profile" title="Save profile (overwrites same name)">💾</button>
+        </div>
         <div class="tabs">${tabs}</div>
         <main>${rows}</main>
       </section>
@@ -133,6 +153,31 @@ function render(state) {
       clearTimeout(applyTimer);
       render(await ApplyPreset(btn.dataset.preset));
     });
+  });
+
+  document.querySelectorAll('.preset-del').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      render(await DeleteProfile(btn.dataset.del));
+    });
+  });
+
+  const saveProfile = async () => {
+    const name = document.getElementById('profile-name').value.trim();
+    if (!name) return;
+    clearTimeout(applyTimer);
+    render(await SaveProfile(name));
+  };
+  document.getElementById('save-profile').addEventListener('click', saveProfile);
+  document.getElementById('profile-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveProfile();
+  });
+
+  document.getElementById('export').addEventListener('click', async () => {
+    render(await ExportConfig());
+  });
+  document.getElementById('import').addEventListener('click', async () => {
+    clearTimeout(applyTimer);
+    render(await ImportConfig());
   });
 
   document.getElementById('reset').addEventListener('click', async () => {
