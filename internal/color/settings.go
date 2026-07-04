@@ -86,20 +86,22 @@ func Presets(defaultSaturation int) []Settings {
 
 	standard := base("Standard")
 
+	// Saturation offsets are small on purpose: drivers put their
+	// default mid-range (NvAPI/ADL 50%), so +20 already means 70%.
 	vivid := base("Vivid")
 	vivid.Temperature = 7200 // cold white, ASUS "Vivid coldest" territory
 	vivid.Contrast = 105
-	vivid.Saturation = sat(+35)
+	vivid.Saturation = sat(+20)
 
-	// Tuned for typical laptop panels that ship yellowish and washed
-	// out: cold white point + blue channel push to kill the yellow,
-	// contrast and saturation lifted to restore the punch the cold
-	// white point takes away.
+	// Tuned on real ASUS TUF panels that ship yellowish and washed
+	// out: cold white point + blue channel push to kill the yellow, a
+	// touch of gamma depth and a hair of saturation. Saturation stays
+	// near the driver default on purpose — vendors put the default
+	// mid-range (NvAPI 50%), so big offsets clamp to 100%.
 	laptop := base("Laptop")
 	laptop.Temperature = 9300
-	laptop.Contrast = 106
 	laptop.Gamma = 1.05
-	laptop.Saturation = sat(+60)
+	laptop.Saturation = sat(+2)
 	laptop.Red = ChannelSettings{Brightness: 105, Contrast: 105, Gamma: 1.0}
 	laptop.Green = ChannelSettings{Brightness: 105, Contrast: 100, Gamma: 1.0}
 	laptop.Blue = ChannelSettings{Brightness: 115, Contrast: 100, Gamma: 1.0}
@@ -111,7 +113,7 @@ func Presets(defaultSaturation int) []Settings {
 
 	gaming := base("Gaming")
 	gaming.Contrast = 108
-	gaming.Saturation = sat(+25)
+	gaming.Saturation = sat(+12)
 
 	fps := base("FPS Boost")
 	fps.Saturation = sat(+45) // near-max vibrance: targets pop, vibranceGUI-style
