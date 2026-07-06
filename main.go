@@ -12,6 +12,8 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"teinte/internal/desktopentry"
 )
 
 //go:embed all:frontend/dist
@@ -49,6 +51,16 @@ func main() {
 			os.Exit(1)
 		}
 		return
+	}
+
+	// Register the app-menu launcher entry (Linux only, no-op
+	// elsewhere). Skipped for `wails dev` binaries — their path is
+	// temporary and the entry would break when the session ends.
+	// Failure is non-fatal: a missing menu entry is annoying, not broken.
+	if desktopentry.IsDevBinary() {
+		fmt.Println("[desktop entry] skipping install (dev binary)")
+	} else if err := desktopentry.Install(trayIconPNG); err != nil {
+		fmt.Println("[desktop entry]", err)
 	}
 
 	// Create application with options

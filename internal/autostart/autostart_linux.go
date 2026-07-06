@@ -44,6 +44,9 @@ func Set(enable bool) error {
 		}
 		return nil
 	}
+	if err := devBinaryGuard(); err != nil {
+		return err
+	}
 
 	exe, err := os.Executable()
 	if err != nil {
