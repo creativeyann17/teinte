@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Teinte
+Comment=Display color control
+Exec=teinte
+Icon=teinte
+Terminal=false
+Categories=Utility;Settings;
+StartupWMClass=teinte

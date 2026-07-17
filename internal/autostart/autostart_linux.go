@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"teinte/internal/desktopentry"
 )
 
 func entryPath() (string, error) {
@@ -48,12 +50,9 @@ func Set(enable bool) error {
 		return err
 	}
 
-	exe, err := os.Executable()
+	exe, err := desktopentry.ExecPath()
 	if err != nil {
 		return err
-	}
-	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
-		exe = resolved
 	}
 	content := fmt.Sprintf(`[Desktop Entry]
 Type=Application

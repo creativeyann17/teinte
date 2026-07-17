@@ -7,6 +7,7 @@ The structure is:
 * bin - Output directory
 * darwin - macOS specific files
 * windows - Windows specific files
+* linux - Linux specific files
 
 ## Mac
 
@@ -33,3 +34,12 @@ build with `wails build`.
 - `info.json` - Application details used for Windows builds. The data here will be used by the Windows installer,
   as well as the application itself (right click the exe -> properties -> details)
 - `wails.exe.manifest` - The main application manifest file.
+
+## Linux
+
+The `linux` directory holds files used to package the Linux build as an AppImage in CI.
+
+- `teinte.desktop` - the static `.desktop` entry bundled inside the AppImage's AppDir (distinct
+  from the one `internal/desktopentry` writes to `~/.local/share/applications` at runtime).
+- `teinte.png` - `appicon.png` resized to 512x512 (linuxdeploy's icon plugin rejects the
+  original 1024x1024 image — only a fixed set of icon theme sizes is accepted).
